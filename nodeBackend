@@ -1,0 +1,86 @@
+#!/bin/bash
+
+print_message() {
+  local color_code=$1
+  shift
+  echo -e "\e[${color_code}m$@\e[0m"
+}
+
+GREEN="32"
+YELLOW="33"
+CYAN="36"
+RED="31"
+MAGENTA="35"
+BLUE="34"
+
+print_message $MAGENTA "=========================================="
+print_message $MAGENTA "      Node.js Project Setup Script        "
+print_message $MAGENTA "=========================================="
+
+print_message $CYAN "\n[1/6] Initializing the Node app..."
+npm init -y
+print_message $GREEN "✔ Node app initialized.\n"
+
+print_message $CYAN "[2/6] Installing essential packages..."
+print_message $YELLOW "   - Installing Express..."
+npm install express
+
+print_message $YELLOW "   - Installing dotenv..."
+npm install dotenv
+
+print_message $YELLOW "   - Installing nodemon globally..."
+npm install -g nodemon
+print_message $GREEN "✔ Essential packages installed.\n"
+
+read -p "Enter any additional packages to install (separate with space): " package_name
+if [[ -n $package_name ]]; then
+  print_message $CYAN "[3/6] Installing additional packages: $package_name..."
+  npm install $package_name
+  print_message $GREEN "✔ Additional packages installed.\n"
+else
+  print_message $BLUE "[3/6] No additional packages selected.\n"
+fi
+
+print_message $CYAN "[4/6] Creating project structure..."
+mkdir -p public src/{assets,controllers,models,database,routes,utility,middlewares}
+touch index.js .env src/app.js
+print_message $GREEN "✔ Project structure created.\n"
+
+read -p "Enter port for the server: " port
+echo "PORT=$port" > .env
+print_message $YELLOW "   - Configured .env with PORT=$port."
+
+cat <<EOF > index.js
+import { config } from "dotenv";
+import { app } from "./src/app.js";
+config();
+app.listen(process.env.PORT, () => {
+    console.log(\`Server is listening on \${process.env.PORT}\`);
+});
+EOF
+print_message $YELLOW "   - index.js created and configured."
+
+cat <<EOF > src/app.js
+import express from "express";
+
+const app = express();
+app.get("/", (req, res) => {
+    res.send("Server is working");
+});
+export { app };
+EOF
+print_message $YELLOW "   - src/app.js created and configured."
+
+print_message $CYAN "[5/6] Setting project type to module in package.json..."
+sed -i '/"version": "1.0.0"/a \  "type": "module",' package.json
+print_message $GREEN "✔ Project type set to module.\n"
+
+print_message $CYAN "[6/6] Starting the server with nodemon..."
+print_message $MAGENTA "------------------------------------------"
+nodemon index.js || print_message $RED "✖ Error starting the server with nodemon."
+print_message $MAGENTA "------------------------------------------"
+
+print_message $MAGENTA "\n=========================================="
+print_message $MAGENTA "      Setup Complete! Happy Coding!       "
+print_message $MAGENTA "=========================================="
+exit 0
